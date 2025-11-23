@@ -1,0 +1,3 @@
+# Elevation Map of the United States
+
+#### For this interctive web map I used two data sets to create an interactive map of the united states mean elevation profile. The first data set is the average height above sea level for every US state, this is then colored with cloropleth shading using natural breaks (jenks). The states with the higher mean elevation are colored darker, and the states with lower elevations are lighter. The second data set I used was of every states highest and lowest points. These points are colored depending on if they are the highest or lowest points, with the highest being in red and lowest being in blue. I also added some intercation with clicking on the points provding the name of the location. 

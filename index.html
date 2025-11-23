@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Elevation Map</title>
+
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.0/dist/leaflet.css"/>
+    <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.14.0/css/all.css">
+    <link href="https://fonts.googleapis.com/css?family=Titillium+Web" rel="stylesheet">
+
+    <style>
+        html, body, #map {
+            width: 100%;
+            height: 100%;
+            margin: 0;
+            background: #fff;
+        }
+
+        .legend {
+            line-height: 40px;
+            font-size: 16px;
+            width: 190px;
+            color: #333333;
+            padding: 6px 8px;
+            background: rgba(255,255,255,0.5);
+            box-shadow: 0 0 15px rgba(0,0,0,0.2);
+            border-radius: 5px;
+            font-family: 'Titillium Web', sans-serif;
+        }
+
+        .legend i {
+            width: 20px;
+            height: 20px;
+            float: left;
+            margin-right: 8px;
+            opacity: 0.9;
+        }
+
+        .legend p {
+            font-size: 14px;
+            line-height: 20px;
+            margin: 0;
+        }
+    </style>
+
+    <script src="https://unpkg.com/leaflet@1.7.0/dist/leaflet.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet-ajax/2.1.0/leaflet.ajax.min.js"></script>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.1.0/jquery.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/chroma-js/1.3.4/chroma.min.js"></script>
+
+</head>
+<body>
+
+<div id="map"></div>
+
+<script>
+
+// Map Setup
+var mymap = L.map('map', {
+    center: [39.8283, -98.5795],
+    zoom: 4,
+    detectRetina: true
+});
+
+// Basemap
+L.tileLayer('http://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}.png')
+    .addTo(mymap);
+
+
+var pointColors = {
+    highest: chroma('red').brighten(1).hex(),
+    lowest: chroma('blue').brighten(1).hex()
+};
+
+// Marker CSS
+$('head').append(`<style>
+.marker-highest { color: ${pointColors.highest}; font-size: 18px; text-shadow: 0 0 3px #fff; }
+.marker-lowest { color: ${pointColors.lowest}; font-size: 18px; text-shadow: 0 0 3px #fff; }
+</style>`);
+
+// Point Layer
+var pointLayer = L.geoJson.ajax("assets/points.geojson", {
+    onEachFeature: function(feature, layer) {
+        layer.bindPopup(feature.properties.point || "");
+    },
+    pointToLayer: function(feature, latlng) {
+        var heightAttr = feature.properties["height "];
+        var cssClass = heightAttr === "highest" ? "marker-highest" : "marker-lowest";
+
+        return L.marker(latlng, {
+            icon: L.divIcon({ className: `fas fa-map-marker ${cssClass}` })
+        });
+    }
+}).addTo(mymap);
+
+// Elevation color ramp
+var elevColors = chroma.scale('Purples').colors(5);
+
+function setColor(elev) {
+    if (elev >= 1500) return elevColors[4];
+    else if (elev >= 980) return elevColors[3];
+    else if (elev >= 520)  return elevColors[2];
+    else if (elev >= 210)  return elevColors[1];
+    else return elevColors[0];
+}
+
+function style(feature) {
+    return {
+        fillColor: setColor(feature.properties["elevation _m"]),
+        fillOpacity: 0.6,
+        weight: 1,
+        opacity: 1,
+        color: '#666'
+    };
+}
+
+var polygonLayer = L.geoJson.ajax("assets/mean.geojson", {
+    style: style
+}).addTo(mymap);
+
+
+// Legend 
+var legend = L.control({ position: 'topright' });
+
+legend.onAdd = function () {
+    var div = L.DomUtil.create('div', 'legend');
+
+    div.innerHTML += '<b>Elevation (m)</b><br />';
+    div.innerHTML += '<i style="background:' + elevColors[4] + '; opacity:0.5"></i><p>1501 – 2070</p>';
+    div.innerHTML += '<i style="background:' + elevColors[3] + '; opacity:0.5"></i><p>981 – 1500</p>';
+    div.innerHTML += '<i style="background:' + elevColors[2] + '; opacity:0.5"></i><p>521 – 980</p>';
+    div.innerHTML += '<i style="background:' + elevColors[1] + '; opacity:0.5"></i><p>211 – 520</p>';
+    div.innerHTML += '<i style="background:' + elevColors[0] + '; opacity:0.5"></i><p>20 – 210</p>';
+
+    div.innerHTML += '<hr><b>Point Types</b><br />';
+    div.innerHTML += '<i class="fas fa-map-marker" style="color:' + pointColors.highest + ';"></i><p>Highest Point</p>';
+    div.innerHTML += '<i class="fas fa-map-marker" style="color:' + pointColors.lowest + ';"></i><p>Lowest Point</p>';
+
+    return div;
+};
+
+legend.addTo(mymap);
+
+</script>
+
+</body>
+</html>
